@@ -133,9 +133,15 @@ passed, 1 skipped, 0 failed, the skip being `append`.
 
 `idbwasm/harness` is also the reference for embedding that backend. A host needs
 three things and they are all in it: the two exports `on_sos_reply` /
-`on_sos_error` in `main.mbt`, the `sosidb` import object in `loader.mjs`, and a
-`run_async` to start from — there is no event loop on wasm-gc, so the call that
-starts a run finishes long before the run does.
+`on_sos_error` in `main.mbt`, the `sosidb` import object, and a `run_async` to
+start from — there is no event loop on wasm-gc, so the call that starts a run
+finishes long before the run does.
+
+The import object itself is `idbwasm/loader.mjs`, and it is the package's
+contract rather than the harness's: copy it beside your page and spread
+`createSosImports(getExports)` into the imports you instantiate with. A page is
+served from one directory and an import that climbs out of it is a 403, which is
+why it is copied rather than reached for where it lies.
 
 ## Demo
 
