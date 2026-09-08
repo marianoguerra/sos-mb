@@ -71,7 +71,17 @@ pub fn run_async(work : async () -> Unit noraise) -> Unit = "%async.run"
 ///
 /// Never called directly: `park` wraps it, because a boundary that answers on
 /// the spot must not wake a run that has not suspended yet.
-async fn[T] suspend(register : ((T) -> Unit) -> Unit) -> T noraise = "%async.suspend"
+///
+/// TWO callbacks, resume and fail, which is the shape
+/// `moonbitlang/async`'s own `async_suspend` declares. The one-callback
+/// spelling type-checks and then crashes moonc in code generation
+/// (`Invalid_argument("Moonc.Basic_lst.fold_right2")`, v0.10.12+1634b282e) --
+/// an arity mismatch reaching the backend, on every target. Nothing here
+/// raises, so the fail half is ignored and a failure travels in the `Answer`
+/// this returns; it is declared only because the intrinsic wants it.
+async fn[T] suspend(
+  register : ((T) -> Unit, (Error) -> Unit) -> Unit,
+) -> T noraise = "%async.suspend"
 
 ///|
 /// Make one call, and give the answer back -- now if it is ready now, later if
@@ -100,7 +110,7 @@ async fn park(go : ((Answer) -> Unit) -> Unit) -> Answer noraise {
   })
   match answered.val {
     Some(answer) => answer
-    None => suspend(k => waking.val = Some(k))
+    None => suspend((k, _fail) => waking.val = Some(k))
   }
 }
 
