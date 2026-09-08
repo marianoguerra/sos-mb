@@ -1,0 +1,13 @@
+# Kept in git, kept out of the published module.
+#
+# Any call to `%async.suspend` targeting wasm-gc crashes moonc
+# (`Invalid_argument("Moonc.Basic_lst.fold_right2")`) as of v0.10.12+1634b282e,
+# and the token registry `idbwasm` parks calls in cannot work without it.
+# `moon check` passes, because the failure is in code generation and not in
+# typing -- which is why this file exists rather than the publish gate catching
+# it.
+#
+# Nothing that ships imports `idbwasm` or its harness, so leaving them out costs
+# the module nothing. Delete this entry once the compiler can build them again;
+# docs/wasm-gc-async-suspend-ice.md has the repro.
+idbwasm/
