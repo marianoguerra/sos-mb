@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/sos/testing"
+
+import {
+  "marianoguerra/sos",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub async fn check(&@sos.Store, prefix? : String) -> Report noraise
+
+pub fn check_sync(&@sos.Store, prefix? : String) -> Report raise
+
+pub async fn run(&@sos.Store, prefix? : String) -> Unit
+
+pub fn run_sync(&@sos.Store, prefix? : String) -> Unit raise
+
+// Errors
+
+// Types and methods
+pub(all) struct Check {
+  name : String
+  skipped : String?
+  failure : String?
+} derive(Eq, @debug.Debug)
+pub fn Check::is_ok(Self) -> Bool
+
+type Report
+pub fn Report::checks(Self) -> Array[Check]
+pub fn Report::failures(Self) -> Array[Check]
+pub fn Report::is_ok(Self) -> Bool
+pub fn Report::passed(Self) -> Int
+pub fn Report::skipped(Self) -> Int
+pub impl Show for Report
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,10 @@
+import {
+  "marianoguerra/sos",
+  "marianoguerra/sos/indexeddb",
+  "marianoguerra/sos/testing",
+  "moonbitlang/async",
+}
+
+supported_targets = "js"
+
+pkgtype(kind: "executable")

@@ -1,0 +1,7 @@
+import {
+  "marianoguerra/sos",
+}
+
+import {
+  "marianoguerra/sos/testing",
+} for "test"

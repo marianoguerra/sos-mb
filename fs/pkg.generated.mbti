@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/sos/fs"
+
+import {
+  "marianoguerra/sos",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type FsStore
+pub async fn FsStore::open(String) -> Self raise @sos.SosError
+pub fn FsStore::root(Self) -> String
+pub impl @sos.Store for FsStore
+
+// Type aliases
+
+// Traits

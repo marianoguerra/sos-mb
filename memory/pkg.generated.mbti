@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/sos/memory"
+
+import {
+  "marianoguerra/sos",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+type MemoryStore
+pub fn MemoryStore::new(name? : String) -> Self
+pub fn MemoryStore::size(Self) -> Int
+pub impl @sos.Store for MemoryStore
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,16 @@
+// `moonbitlang/async/fs` is aliased rather than taken as `@fs`, because this
+// package is itself `marianoguerra/sos/fs` and its own black-box tests import it
+// under that name.
+import {
+  "marianoguerra/sos",
+  "moonbitlang/async/fs" @osfs,
+  "moonbitlang/async/os_error",
+}
+
+import {
+  "marianoguerra/sos/testing",
+  "moonbitlang/async",
+  "moonbitlang/async/fs" @osfs,
+} for "test"
+
+supported_targets = "native"

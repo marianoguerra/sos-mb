@@ -1,0 +1,185 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/sos"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn ancestors(String) -> Array[String]
+
+pub fn apply_list_options(Array[Entry], ListOptions) -> Array[Entry]
+
+pub fn basename(String) -> String
+
+pub fn depth(String) -> Int
+
+pub fn ensure_dir_path(String) -> String
+
+pub fn group_flat_listing(String, Iter[Entry], ListOptions) -> Array[Entry]
+
+pub fn is_dir_path(String) -> Bool
+
+pub fn join(String, String) -> String
+
+pub fn normalize(String) -> String
+
+pub fn parent(String) -> String
+
+pub fn path_compare(String, String) -> Int
+
+pub fn path_lt(String, String) -> Bool
+
+pub fn strip_dir_path(String) -> String
+
+pub fn validate(String, operation~ : String) -> String raise SosError
+
+pub fn validate_dir(String, operation~ : String) -> String raise SosError
+
+pub fn validate_file(String, operation~ : String) -> String raise SosError
+
+// Errors
+pub(all) suberror SosError {
+  SosError(kind~ : ErrorKind, operation~ : String, path~ : String, message~ : String)
+}
+pub fn SosError::is_not_found(Self) -> Bool
+pub fn SosError::kind(Self) -> ErrorKind
+pub fn SosError::message(Self) -> String
+pub fn SosError::new(ErrorKind, operation~ : String, path? : String, message? : String) -> Self
+pub fn SosError::operation(Self) -> String
+pub fn SosError::path(Self) -> String
+pub impl Show for SosError
+
+// Types and methods
+pub(all) struct Capability {
+  read : Bool
+  read_with_range : Bool
+  write : Bool
+  write_can_append : Bool
+  write_with_content_type : Bool
+  write_with_if_not_exists : Bool
+  stat : Bool
+  list : Bool
+  list_with_recursive : Bool
+  list_with_limit : Bool
+  list_with_start_after : Bool
+  delete : Bool
+  delete_with_recursive : Bool
+  create_dir : Bool
+  copy : Bool
+  rename : Bool
+  shared : Bool
+} derive(Eq, @debug.Debug)
+pub fn Capability::none() -> Self
+
+pub(all) struct DeleteOptions {
+  recursive : Bool
+} derive(Eq, @debug.Debug)
+pub fn DeleteOptions::default() -> Self
+
+pub(all) struct Entry {
+  path : String
+  metadata : Metadata
+} derive(Eq, @debug.Debug)
+pub fn Entry::is_dir(Self) -> Bool
+pub fn Entry::name(Self) -> String
+
+pub(all) enum EntryMode {
+  File
+  Dir
+  Unknown
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ErrorKind {
+  NotFound
+  AlreadyExists
+  PermissionDenied
+  IsADirectory
+  NotADirectory
+  DirectoryNotEmpty
+  InvalidPath
+  Unsupported
+  ConfigInvalid
+  RangeNotSatisfied
+  Unexpected
+} derive(Eq, @debug.Debug)
+pub impl Show for ErrorKind
+
+pub(all) struct ListOptions {
+  recursive : Bool
+  limit : Int?
+  start_after : String?
+} derive(Eq, @debug.Debug)
+pub fn ListOptions::default() -> Self
+
+pub(all) struct Metadata {
+  mode : EntryMode
+  content_length : Int64
+  content_type : String?
+  etag : String?
+  last_modified : Int64?
+} derive(Eq, @debug.Debug)
+pub fn Metadata::dir(last_modified? : Int64) -> Self
+pub fn Metadata::file(Int64, content_type? : String, etag? : String, last_modified? : Int64) -> Self
+pub fn Metadata::is_dir(Self) -> Bool
+pub fn Metadata::is_file(Self) -> Bool
+
+type Operator
+pub fn Operator::capability(Self) -> Capability
+pub async fn Operator::copy(Self, String, String) -> Unit raise SosError
+pub async fn Operator::create_dir(Self, String) -> Unit raise SosError
+pub async fn Operator::delete(Self, String, recursive? : Bool) -> Unit raise SosError
+pub async fn Operator::exists(Self, String) -> Bool raise SosError
+pub fn Operator::info(Self) -> StoreInfo
+pub async fn Operator::list(Self, String, recursive? : Bool, limit? : Int, start_after? : String) -> Array[Entry] raise SosError
+pub fn Operator::new(&Store) -> Self
+pub async fn Operator::read(Self, String, range? : Range) -> Bytes raise SosError
+pub async fn Operator::read_text(Self, String, range? : Range) -> String raise SosError
+pub async fn Operator::rename(Self, String, String) -> Unit raise SosError
+pub async fn Operator::stat(Self, String) -> Metadata raise SosError
+pub fn Operator::store(Self) -> &Store
+pub async fn Operator::write(Self, String, Bytes, content_type? : String, append? : Bool, if_not_exists? : Bool) -> Unit raise SosError
+pub async fn Operator::write_text(Self, String, String, content_type? : String, append? : Bool, if_not_exists? : Bool) -> Unit raise SosError
+
+pub(all) struct Range {
+  start : Int64
+  end : Int64?
+} derive(Eq, @debug.Debug)
+pub fn Range::between(Int64, Int64) -> Self
+pub fn Range::from(Int64) -> Self
+pub fn Range::prefix(Int64) -> Self
+pub fn Range::resolve(Self, Int64) -> (Int64, Int64)?
+
+pub(all) struct ReadOptions {
+  range : Range?
+} derive(Eq, @debug.Debug)
+pub fn ReadOptions::default() -> Self
+
+pub(all) struct StoreInfo {
+  scheme : String
+  root : String
+  name : String
+  capability : Capability
+} derive(Eq, @debug.Debug)
+
+pub(all) struct WriteOptions {
+  content_type : String?
+  append : Bool
+  if_not_exists : Bool
+} derive(Eq, @debug.Debug)
+pub fn WriteOptions::default() -> Self
+
+// Type aliases
+
+// Traits
+pub(open) trait Store {
+  fn info(Self) -> StoreInfo
+  async fn read(Self, String, ReadOptions) -> Bytes raise SosError
+  async fn write(Self, String, Bytes, WriteOptions) -> Unit raise SosError
+  async fn stat(Self, String) -> Metadata raise SosError
+  async fn list(Self, String, ListOptions) -> Array[Entry] raise SosError
+  async fn delete(Self, String, DeleteOptions) -> Unit raise SosError
+  async fn create_dir(Self, String) -> Unit raise SosError
+  async fn copy(Self, String, String) -> Unit raise SosError = _
+  async fn rename(Self, String, String) -> Unit raise SosError = _
+}
