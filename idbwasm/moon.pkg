@@ -1,0 +1,24 @@
+// The `wasm-gc` way in: a token, and an export JavaScript calls back.
+//
+// On this backend a MoonBit closure cannot cross into JavaScript, so there is
+// nothing to hand an `IDBRequest.onsuccess`. What crosses instead is an `Int`:
+// every call hands JavaScript a token, JavaScript settles its own Promise and
+// calls back into an export with that token, and `tokens.mbt` finds the parked
+// continuation. It is the same shape a browser page already uses for `fetch`.
+//
+// This package therefore cannot stand alone in a build: an export belongs to the
+// executable that links it, so the host declares two forwarders into `reply` and
+// `fail` and supplies the `sosidb` import object. `harness/` is a complete
+// example of both halves.
+//
+// Everything above the six calls -- the listing, the implicit directories, the
+// key bound -- is `@sos/idbcore`, shared with the `js` boundary.
+import {
+  "marianoguerra/sos",
+  "marianoguerra/sos/idbcore",
+  "moonbitlang/core/encoding/base64",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+}
+
+supported_targets = "wasm-gc"

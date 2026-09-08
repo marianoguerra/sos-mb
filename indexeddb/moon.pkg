@@ -1,7 +1,7 @@
 import {
   "marianoguerra/sos",
+  "marianoguerra/sos/idbcore",
   "moonbitlang/async/js_async",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "js"

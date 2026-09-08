@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sos IndexedDB conformance (wasm-gc)</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 2rem; }
+  h1 { font-size: 1rem; font-weight: 600; margin: 0 0 1rem; }
+  pre { white-space: pre-wrap; padding: 1rem; border-radius: 6px; background: #f4f4f5; }
+  pre.ok { background: #e8f5e9; }
+  pre.fail { background: #fdecea; }
+  .note { color: #71717a; }
+</style>
+<h1>sos &mdash; IndexedDB conformance, on wasm-gc</h1>
+<pre id="out">running&hellip;</pre>
+<p class="note">Built by <code>moon build --target wasm-gc --release idbwasm/harness</code>
+and loaded straight out of <code>_build/</code>, so there is nothing to copy.
+The same suite the memory and filesystem backends run under <code>moon test</code>.</p>
+<script type="module">
+  import { instantiate } from "./loader.mjs";
+
+  // The harness's own two imports. Everything IndexedDB is in `loader.mjs`.
+  const extra = () => ({
+    harness: {
+      publish(summary, ok) {
+        console.log(summary);
+        globalThis.__sos_result = { summary, ok: ok === 1 || ok === true };
+        const el = document.getElementById("out");
+        el.textContent = summary;
+        el.className = globalThis.__sos_result.ok ? "ok" : "fail";
+      },
+      now: () => Date.now(),
+    },
+  });
+
+  instantiate("../../_build/wasm-gc/release/build/idbwasm/harness/harness.wasm", extra)
+    .catch((e) => {
+      const el = document.getElementById("out");
+      el.textContent = "the harness could not load: " + e;
+      el.className = "fail";
+    });
+</script>

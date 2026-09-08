@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/sos/idbcore"
+
+import {
+  "marianoguerra/sos",
+}
+
+// Values
+pub fn decode_rows(String, String, operation~ : String) -> Array[@sos.Entry] raise @sos.SosError
+
+pub fn upper_bound(String) -> String
+
+// Errors
+
+// Types and methods
+pub struct IdbStore {
+  conn : &Conn
+}
+pub fn IdbStore::database(Self) -> String
+pub fn IdbStore::over(&Conn) -> Self
+pub impl @sos.Store for IdbStore
+
+pub(all) struct Rec {
+  data : Bytes
+  content_type : String
+  modified : Int64
+  is_dir : Bool
+}
+pub fn Rec::to_metadata(Self) -> @sos.Metadata
+
+// Type aliases
+
+// Traits
+pub(open) trait Conn {
+  fn name(Self) -> String
+  async fn get(Self, String, operation~ : String) -> Rec? raise @sos.SosError
+  async fn put(Self, String, Bytes, content_type~ : String, is_dir~ : Bool, operation~ : String) -> Unit raise @sos.SosError
+  async fn delete_one(Self, String, operation~ : String) -> Unit raise @sos.SosError
+  async fn delete_range(Self, String, String, operation~ : String) -> Unit raise @sos.SosError
+  async fn scan(Self, String, String, operation~ : String) -> String raise @sos.SosError
+}

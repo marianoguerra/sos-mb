@@ -1,0 +1,26 @@
+import {
+  "marianoguerra/sos",
+  "marianoguerra/sos/idbcore",
+  "marianoguerra/sos/idbwasm",
+  "marianoguerra/sos/testing",
+}
+
+supported_targets = "wasm-gc"
+
+pkgtype(kind: "executable")
+
+options(
+  link: {
+    "wasm-gc": {
+      "exports": [
+        // The other half of every call in `idbwasm/ffi.mbt`. An export belongs
+        // to the executable that links it, never to a library, so this pair is
+        // what a host has to write -- and it is the whole of what it has to
+        // write.
+        "on_sos_reply",
+        "on_sos_error",
+      ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

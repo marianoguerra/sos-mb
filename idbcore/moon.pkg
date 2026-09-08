@@ -1,0 +1,26 @@
+// The IndexedDB semantics, once, for every target that can reach IndexedDB.
+//
+// There are two ways into IndexedDB from MoonBit and they have nothing in
+// common. On the `js` backend an `IDBRequest` becomes a `Promise` and
+// `Promise::wait()` turns it back into a value. On `wasm-gc` a closure cannot
+// cross into JavaScript at all, so the page hands JS a token and JS calls back
+// into an export with it.
+//
+// What they have in common is everything else: implicit directories, the
+// `U+FFFF` key bound, a range delete that agrees with the listing, `stat` on a
+// directory nobody stored a marker for, `create_dir` walking ancestors. That is
+// the same problem twice, so -- following `listing.mbt`, which exists for the
+// same reason -- it is solved once here, over a `Conn` seam, in a package with
+// no target and no FFI.
+//
+// The prize is not only the duplication. A `Conn` over a `Map` is a store this
+// package can drive under `moon test` on every backend, so the semantics that
+// used to be verifiable only in a browser now have unit tests.
+import {
+  "marianoguerra/sos",
+  "moonbitlang/core/json",
+}
+
+import {
+  "marianoguerra/sos/testing",
+} for "test"

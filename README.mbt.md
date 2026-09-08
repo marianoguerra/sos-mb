@@ -11,9 +11,21 @@ blobs through one interface, and does not care whether the bytes live in a
 @sos                 the interface, the types, the path rules   all targets
 @sos/memory          a Map                                      all targets
 @sos/fs              a real directory tree                      native
-@sos/indexeddb       the browser's IndexedDB                    js
-@sos/testing         one conformance suite, run by all three    all targets
+@sos/idbcore         the IndexedDB semantics, over a `Conn`     all targets
+@sos/indexeddb       IndexedDB, reached by Promise              js
+@sos/idbwasm         IndexedDB, reached by token and export     wasm-gc
+@sos/testing         one conformance suite, run by all of them  all targets
 ```
+
+There are two ways into IndexedDB from MoonBit and they have nothing in common:
+on `js` an `IDBRequest` becomes a `Promise`; on `wasm-gc` a closure cannot cross
+into JavaScript at all, so a call hands JavaScript a token and JavaScript calls
+back into an export with it. What they have in common is everything else —
+implicit directories, the key bound, the range delete, the ancestor walk — so
+that lives once in `@sos/idbcore`, over a six-method `Conn` seam, for the reason
+`listing.mbt` gives about the listing. A `Conn` over a `Map` is then a store the
+suite can run under `moon test`, which is how semantics that used to be
+reachable only from a browser got unit tests.
 
 ## The shape of it
 
@@ -58,7 +70,7 @@ what every other store means by it.
 A backend declares what it can do, and `Operator` refuses the rest before the
 call lands:
 
-| | memory | fs | indexeddb |
+| | memory | fs | both IndexedDB |
 |---|---|---|---|
 | ranged reads | yes | yes | yes |
 | append | yes | yes | no — two transactions would race |
@@ -105,16 +117,25 @@ Core and memory, on the backend with no event loop.
 moon check --target all
 ```
 
-IndexedDB has no `moon test`: node has no `indexedDB`. It is verified in a real
-browser instead —
+Neither IndexedDB backend has a `moon test`: node has no `indexedDB`. Each is
+verified in a real browser instead, against the same suite —
 
 ```bash
-moon build --target js --release indexeddb/harness && python3 -m http.server 8731
+moon build --target js --release indexeddb/harness
+moon build --target wasm-gc --release idbwasm/harness
+python3 -m http.server 8731
 ```
 
-Then open <http://localhost:8731/indexeddb/harness/index.html>. The page loads the
-build output straight out of `_build/` and runs the same conformance suite that
-`moon test` runs against the other two backends.
+Then open <http://localhost:8731/indexeddb/harness/index.html> and
+<http://localhost:8731/idbwasm/harness/index.html>. Each page loads the build
+output straight out of `_build/`, and both must report the same thing: 33
+passed, 1 skipped, 0 failed, the skip being `append`.
+
+`idbwasm/harness` is also the reference for embedding that backend. A host needs
+three things and they are all in it: the two exports `on_sos_reply` /
+`on_sos_error` in `main.mbt`, the `sosidb` import object in `loader.mjs`, and a
+`run_async` to start from — there is no event loop on wasm-gc, so the call that
+starts a run finishes long before the run does.
 
 ## Demo
 

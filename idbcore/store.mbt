@@ -1,5 +1,5 @@
 ///|
-/// A store backed by the browser's IndexedDB.
+/// A store backed by IndexedDB, over whatever `Conn` reached it.
 ///
 /// Object-style, like `MemoryStore` and unlike `FsStore`: there is one flat key
 /// space and directories are reconstructed from it by
@@ -10,39 +10,20 @@
 /// The one thing that is genuinely IndexedDB's own is `list`: a cursor over
 /// `IDBKeyRange.bound(prefix, prefix + "\u{FFFF}")`, which is why `@sos.validate`
 /// forbids `U+FFFF` in a path. Nothing outside the prefix is read.
-struct IdbStore {
-  db : Database
-  name : String
+pub struct IdbStore {
+  conn : &Conn
 }
 
 ///|
-/// Open, or create, `database` and use the object store `store` inside it.
-pub async fn IdbStore::open(
-  database? : String = "sos",
-  store? : String = "objects",
-) -> IdbStore raise @sos.SosError {
-  guard has_indexeddb() else {
-    raise @sos.SosError::new(
-      @sos.ConfigInvalid,
-      operation="open",
-      message="this context has no indexedDB",
-    )
-  }
-  let db = open_db(database, store).wait() catch {
-    err =>
-      raise @sos.SosError::new(
-        @sos.Unexpected,
-        operation="open",
-        message="could not open '\{database}': \{err}",
-      )
-  }
-  { db, name: database, }
+/// The store an open connection speaks for.
+pub fn IdbStore::over(conn : &Conn) -> IdbStore {
+  { conn, }
 }
 
 ///|
 /// The database name this store is anchored in.
 pub fn IdbStore::database(self : IdbStore) -> String {
-  self.name
+  self.conn.name()
 }
 
 ///|
@@ -53,72 +34,8 @@ pub fn IdbStore::database(self : IdbStore) -> String {
 /// strings by UTF-16 code unit -- so a key with an astral character in it starts
 /// with a surrogate below `0xFFFF` and stays inside the bound. `@sos.path_compare`
 /// uses the same ordering for the same reason.
-fn upper_bound(prefix : String) -> String {
+pub fn upper_bound(prefix : String) -> String {
   prefix + "\u{FFFF}"
-}
-
-///|
-async fn IdbStore::fetch(
-  self : IdbStore,
-  path : String,
-  operation~ : String,
-) -> Record? raise @sos.SosError {
-  let record = self.db.get(path).wait() catch {
-      err => raise unexpected(err, operation~, path~)
-    }
-  if record.is_missing() {
-    None
-  } else {
-    Some(record)
-  }
-}
-
-///|
-fn unexpected(
-  err : Error,
-  operation~ : String,
-  path~ : String,
-) -> @sos.SosError {
-  match err {
-    @sos.SosError(_) as sos => sos
-    other =>
-      @sos.SosError::new(
-        @sos.Unexpected,
-        operation~,
-        path~,
-        message=other.to_string(),
-      )
-  }
-}
-
-///|
-fn Record::to_metadata(self : Record) -> @sos.Metadata {
-  let modified = self.modified().to_int64()
-  if self.is_dir() {
-    @sos.Metadata::dir(last_modified=modified)
-  } else {
-    let ctype = self.content_type()
-    @sos.Metadata::file(
-      self.data().length().to_int64(),
-      content_type?=if ctype == "" { None } else { Some(ctype) },
-      last_modified=modified,
-    )
-  }
-}
-
-///|
-/// Write one record.
-async fn IdbStore::store(
-  self : IdbStore,
-  path : String,
-  data : Bytes,
-  content_type : String?,
-  is_dir~ : Bool,
-  operation~ : String,
-) -> Unit raise @sos.SosError {
-  self.db.put(path, data, content_type.unwrap_or(""), now_ms(), is_dir).wait() catch {
-    err => raise unexpected(err, operation~, path~)
-  }
 }
 
 ///|
@@ -132,9 +49,21 @@ async fn IdbStore::index(
   prefix : String,
   operation~ : String,
 ) -> Array[@sos.Entry] raise @sos.SosError {
-  let encoded = self.db.scan(prefix, upper_bound(prefix)).wait() catch {
-      err => raise unexpected(err, operation~, path=prefix)
-    }
+  let encoded = self.conn.scan(prefix, upper_bound(prefix), operation~)
+  decode_rows(encoded, prefix, operation~)
+}
+
+///|
+/// The rows `Conn::scan` answered, as entries.
+///
+/// Public because it is the shape both boundaries have to produce, and a
+/// backend author who gets it wrong should find out from this package's tests
+/// rather than from a browser.
+pub fn decode_rows(
+  encoded : String,
+  prefix : String,
+  operation~ : String,
+) -> Array[@sos.Entry] raise @sos.SosError {
   let rows = @json.parse(encoded) catch {
     err =>
       raise @sos.SosError::new(
@@ -177,7 +106,7 @@ pub impl @sos.Store for IdbStore with fn info(self) {
   {
     scheme: "indexeddb",
     root: "",
-    name: self.name,
+    name: self.conn.name(),
     capability: {
       ..@sos.Capability::none(),
       read: true,
@@ -205,14 +134,14 @@ pub impl @sos.Store for IdbStore with fn info(self) {
 
 ///|
 pub impl @sos.Store for IdbStore with fn read(self, path, opts) {
-  let record = match self.fetch(path, operation="read") {
+  let record = match self.conn.get(path, operation="read") {
     Some(record) => record
     None => raise @sos.SosError::new(@sos.NotFound, operation="read", path~)
   }
-  guard !record.is_dir() else {
+  guard !record.is_dir else {
     raise @sos.SosError::new(@sos.IsADirectory, operation="read", path~)
   }
-  let data = record.data()
+  let data = record.data
   match opts.range {
     None => data
     Some(range) =>
@@ -234,15 +163,21 @@ pub impl @sos.Store for IdbStore with fn read(self, path, opts) {
 
 ///|
 pub impl @sos.Store for IdbStore with fn write(self, path, data, opts) {
-  if opts.if_not_exists && self.fetch(path, operation="write") is Some(_) {
+  if opts.if_not_exists && self.conn.get(path, operation="write") is Some(_) {
     raise @sos.SosError::new(@sos.AlreadyExists, operation="write", path~)
   }
-  self.store(path, data, opts.content_type, is_dir=false, operation="write")
+  self.conn.put(
+    path,
+    data,
+    content_type=opts.content_type.unwrap_or(""),
+    is_dir=false,
+    operation="write",
+  )
 }
 
 ///|
 pub impl @sos.Store for IdbStore with fn stat(self, path) {
-  match self.fetch(path, operation="stat") {
+  match self.conn.get(path, operation="stat") {
     Some(record) => record.to_metadata()
     None =>
       // An implicit directory: nobody stored a marker, but something lives under
@@ -277,54 +212,55 @@ pub impl @sos.Store for IdbStore with fn delete(self, path, opts) {
           message="pass recursive to remove it and everything under it",
         )
       }
-      self.db.delete_one(path).wait() catch {
-        err => raise unexpected(err, operation="delete", path~)
-      }
+      self.conn.delete_one(path, operation="delete")
     } else {
       // One range delete rather than a cursor and N deletes: the same bound the
       // listing uses, so the two can never disagree about what is under a path.
-      self.db.delete_range(path, upper_bound(path)).wait() catch {
-        err => raise unexpected(err, operation="delete", path~)
-      }
+      self.conn.delete_range(path, upper_bound(path), operation="delete")
     }
   } else {
-    self.db.delete_one(path).wait() catch {
-      err => raise unexpected(err, operation="delete", path~)
-    }
+    self.conn.delete_one(path, operation="delete")
   }
 }
 
 ///|
 pub impl @sos.Store for IdbStore with fn create_dir(self, path) {
   for dir in @sos.ancestors(path) {
-    if self.fetch(dir, operation="create_dir") is None {
-      self.store(dir, b"", None, is_dir=true, operation="create_dir")
+    if self.conn.get(dir, operation="create_dir") is None {
+      self.conn.put(
+        dir,
+        b"",
+        content_type="",
+        is_dir=true,
+        operation="create_dir",
+      )
     }
   }
-  if self.fetch(path, operation="create_dir") is None {
-    self.store(path, b"", None, is_dir=true, operation="create_dir")
+  if self.conn.get(path, operation="create_dir") is None {
+    self.conn.put(
+      path,
+      b"",
+      content_type="",
+      is_dir=true,
+      operation="create_dir",
+    )
   }
 }
 
 ///|
 /// One read and one put, instead of the trait default's read through a caller.
 pub impl @sos.Store for IdbStore with fn copy(self, from, to) {
-  let record = match self.fetch(from, operation="copy") {
+  let record = match self.conn.get(from, operation="copy") {
     Some(record) => record
     None => raise @sos.SosError::new(@sos.NotFound, operation="copy", path=from)
   }
-  guard !record.is_dir() else {
+  guard !record.is_dir else {
     raise @sos.SosError::new(@sos.IsADirectory, operation="copy", path=from)
   }
-  let ctype = record.content_type()
-  self.store(
+  self.conn.put(
     to,
-    record.data(),
-    if ctype == "" {
-      None
-    } else {
-      Some(ctype)
-    },
+    record.data,
+    content_type=record.content_type,
     is_dir=false,
     operation="copy",
   )
@@ -337,8 +273,6 @@ pub impl @sos.Store for IdbStore with fn copy(self, from, to) {
 /// but it beats the default's read-through-the-caller by a round trip, and by
 /// not holding the object in MoonBit memory in between.
 pub impl @sos.Store for IdbStore with fn rename(self, from, to) {
-  self.copy(from, to)
-  self.db.delete_one(from).wait() catch {
-    err => raise unexpected(err, operation="rename", path=from)
-  }
+  @sos.Store::copy(self, from, to)
+  self.conn.delete_one(from, operation="rename")
 }

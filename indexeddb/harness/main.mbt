@@ -25,9 +25,7 @@ extern "js" fn publish(summary : String, ok : Bool) -> Unit =
 async fn main {
   let outcome = try {
     // A fresh database per run, so a previous run cannot make this one pass.
-    let store = @indexeddb.IdbStore::open(
-      database="sos-conformance-\{@async.now()}",
-    )
+    let store = @indexeddb.open(database="sos-conformance-\{@async.now()}")
     let report = @testing.check(store)
     (report.to_string(), report.is_ok())
   } catch {
