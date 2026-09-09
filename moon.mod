@@ -1,6 +1,6 @@
 name = "marianoguerra/sos"
 
-version = "0.1.2"
+version = "0.2.0"
 
 readme = "README.mbt.md"
 

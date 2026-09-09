@@ -13,17 +13,9 @@ blobs through one interface, and does not care whether the bytes live in a
 @sos/fs              a real directory tree                      native
 @sos/idbcore         the IndexedDB semantics, over a `Conn`     all targets
 @sos/indexeddb       IndexedDB, reached by Promise              js
-@sos/idbwasm         IndexedDB, reached by token and export     wasm-gc *
+@sos/idbwasm         IndexedDB, reached by token and export     wasm-gc
 @sos/testing         one conformance suite, run by all of them  all targets
 ```
-
-\* `@sos/idbwasm` is in the repository but **not in the published module**. Any
-call to `%async.suspend` targeting wasm-gc crashes moonc as of
-`v0.10.12+1634b282e`, and the token registry that backend parks calls in cannot
-work without it. `moon check` passes, because the failure is in code generation
-rather than typing. See [docs/wasm-gc-async-suspend-ice.md](docs/wasm-gc-async-suspend-ice.md)
-for the repro; the exclusion in `moon.mod` comes out when the compiler can build
-it again.
 
 There are two ways into IndexedDB from MoonBit and they have nothing in common:
 on `js` an `IDBRequest` becomes a `Promise`; on `wasm-gc` a closure cannot cross
@@ -135,13 +127,10 @@ moon test --target native
 Core, memory and the filesystem backend.
 
 ```bash
-moon test --target wasm-gc -p marianoguerra/sos \
-  -p marianoguerra/sos/memory -p marianoguerra/sos/idbcore
+moon test --target wasm-gc
 ```
 
 Core, memory and the IndexedDB semantics, on the backend with no event loop.
-The packages are named one by one because a bare `moon test --target wasm-gc`
-still reaches `idbwasm` and dies in the compiler; see the note at the top.
 
 ```bash
 moon check --target all
@@ -152,21 +141,14 @@ verified in a real browser instead, against the same suite —
 
 ```bash
 moon build --target js --release indexeddb/harness
+moon build --target wasm-gc --release idbwasm/harness
 python3 -m http.server 8731
 ```
 
-Then open <http://localhost:8731/indexeddb/harness/index.html>. The page loads
-the build output straight out of `_build/` and must report 33 passed, 1 skipped,
-0 failed, the skip being `append`.
-
-The wasm-gc harness is built the same way —
-
-```bash
-moon build --target wasm-gc --release idbwasm/harness
-```
-
-— and reported the same 33 passed, 1 skipped, 0 failed when it was written. It
-does not build on the current compiler; see the note above.
+Then open <http://localhost:8731/indexeddb/harness/index.html> and
+<http://localhost:8731/idbwasm/harness/index.html>. Each page loads the build
+output straight out of `_build/`, and both must report the same thing: 33
+passed, 1 skipped, 0 failed — the skip being `append` — and `close: ok`.
 
 `idbwasm/harness` is also the reference for embedding that backend. A host needs
 three things and they are all in it: the two exports `on_sos_reply` /
