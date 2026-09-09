@@ -22,12 +22,40 @@ extern "js" fn publish(summary : String, ok : Bool) -> Unit =
   #|}
 
 ///|
+/// `close`, end to end: it must release the connection, tolerate being called
+/// twice, and leave the store unusable afterwards.
+///
+/// Nothing under `moon test` can check this half -- node has no `indexedDB`, so
+/// the closed `IDBDatabase` that throws `InvalidStateError` out of
+/// `transaction()` only exists in a browser.
+async fn close_check() -> String noraise {
+  let store = @indexeddb.open(database="sos-close-\{@async.now()}") catch {
+    err => return "could not open: \{err}"
+  }
+  try {
+    // Twice, because a release a caller cannot repeat is a release a caller has
+    // to keep track of.
+    store.close()
+    store.close()
+  } catch {
+    err => return "close raised: \{err}"
+  }
+  try {
+    @sos.Operator::new(store).write("after.txt", b"x")
+    "a write after close succeeded"
+  } catch {
+    _ => "ok"
+  }
+}
+
+///|
 async fn main {
   let outcome = try {
     // A fresh database per run, so a previous run cannot make this one pass.
     let store = @indexeddb.open(database="sos-conformance-\{@async.now()}")
     let report = @testing.check(store)
-    (report.to_string(), report.is_ok())
+    let closing = close_check()
+    ("\{report}\nclose: \{closing}", report.is_ok() && closing == "ok")
   } catch {
     err => ("the harness could not run: \{err}", false)
   }

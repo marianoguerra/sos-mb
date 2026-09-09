@@ -42,6 +42,18 @@ export function createSosImports(getExports) {
       );
   };
 
+  // Every operation goes through this, so "that connection is gone" is said
+  // once and says which way it went. Without it a closed handle reaches
+  // `h.db.transaction` and comes back as `InvalidStateError`, and an unknown one
+  // as "cannot read properties of undefined" -- neither of which names the
+  // connection or the mistake.
+  const live = (handle) => {
+    const h = handles.get(handle);
+    if (!h) throw new Error(`connection ${handle} is not open`);
+    if (h.closed) throw new Error(`connection ${handle} is closed`);
+    return h;
+  };
+
   const request = (h, mode, run) =>
     new Promise((resolve, reject) => {
       const tx = h.db.transaction(h.store, mode);
@@ -66,7 +78,7 @@ export function createSosImports(getExports) {
           };
           req.onsuccess = () => {
             const handle = ++nextHandle;
-            handles.set(handle, { db: req.result, store, name: database });
+            handles.set(handle, { db: req.result, store, name: database, closed: false });
             resolve(String(handle));
           };
           req.onerror = () => reject(req.error);
@@ -76,7 +88,7 @@ export function createSosImports(getExports) {
 
     get(handle, key, token) {
       settle(token, async () => {
-        const h = handles.get(handle);
+        const h = live(handle);
         const v = await request(h, "readonly", (s) => s.get(key));
         if (v === undefined || v === null) return JSON.stringify({ found: false });
         return JSON.stringify({
@@ -91,7 +103,7 @@ export function createSosImports(getExports) {
 
     put(handle, key, data, ctype, isDir, token) {
       settle(token, async () => {
-        const h = handles.get(handle);
+        const h = live(handle);
         await request(h, "readwrite", (s) =>
           s.put({
             path: key,
@@ -109,7 +121,7 @@ export function createSosImports(getExports) {
 
     deleteOne(handle, key, token) {
       settle(token, async () => {
-        const h = handles.get(handle);
+        const h = live(handle);
         await request(h, "readwrite", (s) => s.delete(key));
         return "";
       });
@@ -117,7 +129,7 @@ export function createSosImports(getExports) {
 
     deleteRange(handle, low, high, token) {
       settle(token, async () => {
-        const h = handles.get(handle);
+        const h = live(handle);
         // The same bound the listing uses, so the two can never disagree about
         // what is under a path.
         const range = IDBKeyRange.bound(low, high, false, true);
@@ -128,7 +140,7 @@ export function createSosImports(getExports) {
 
     scan(handle, low, high, token) {
       settle(token, () => {
-        const h = handles.get(handle);
+        const h = live(handle);
         return new Promise((resolve, reject) => {
           const tx = h.db.transaction(h.store, "readonly");
           const range = IDBKeyRange.bound(low, high, false, true);
@@ -158,13 +170,31 @@ export function createSosImports(getExports) {
       });
     },
 
+    // Idempotent, and deliberately quiet about a handle it does not know: a
+    // caller closing what it is done with should not have to remember whether it
+    // already did. `live` is not used here for that reason -- a dead handle is
+    // an error for an operation and a no-op for a release.
+    close(handle, token) {
+      settle(token, () => {
+        const h = handles.get(handle);
+        if (!h || h.closed) return "";
+        h.db.close();
+        // The row stays, holding the name, so `destroy` can still delete a
+        // database whose connection was closed first. That is one small object
+        // per closed handle, against a `destroy` that would otherwise find
+        // nothing and silently leave the database on disk.
+        h.closed = true;
+        return "";
+      });
+    },
+
     destroy(handle, token) {
       settle(token, () => {
         const h = handles.get(handle);
         if (!h) return "";
         // `deleteDatabase` blocks while a connection is open, which is why the
         // close and the delete are one call.
-        h.db.close();
+        if (!h.closed) h.db.close();
         handles.delete(handle);
         return new Promise((resolve, reject) => {
           const req = indexedDB.deleteDatabase(h.name);

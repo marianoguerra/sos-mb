@@ -32,6 +32,39 @@ pub fn on_sos_error(token : Int, why : String) -> Unit {
 }
 
 ///|
+/// `close`, end to end, and the order that matters: closing first must not
+/// leave the database behind, because `destroy` still has to be able to name it.
+///
+/// Nothing under `moon test` reaches this. It is the only check that the
+/// handle-table row survives `close` and that `destroy` finds it.
+async fn close_check() -> String noraise {
+  let conn = @idbwasm.WasmConn::open(
+    database="sos-close-\{now_ms().to_int64()}",
+  ) catch {
+    err => return "could not open: \{err}"
+  }
+  let store = @idbcore.IdbStore::over(conn)
+  try {
+    // Twice, because a release a caller cannot repeat is a release a caller has
+    // to keep track of.
+    store.close()
+    store.close()
+  } catch {
+    err => return "close raised: \{err}"
+  }
+  let after = try {
+    @sos.Operator::new(store).write("after.txt", b"x")
+    "a write after close succeeded"
+  } catch {
+    _ => "ok"
+  }
+  conn.destroy() catch {
+    err => return "destroy after close raised: \{err}"
+  }
+  after
+}
+
+///|
 /// Start the run and return.
 ///
 /// `run_async` drives the suite on this stack until the first call parks, and
@@ -46,7 +79,11 @@ fn main {
       let name = "sos-conformance-\{now_ms().to_int64()}"
       let conn = @idbwasm.WasmConn::open(database=name)
       let report = @testing.check(@idbcore.IdbStore::over(conn))
-      let summary = (report.to_string(), report.is_ok())
+      let closing = close_check()
+      let summary = (
+        "\{report}\nclose: \{closing}",
+        report.is_ok() && closing == "ok",
+      )
       // And gone again, so a browser does not accumulate one database per run.
       // This is `destroy`'s own test as well: nothing else calls it.
       conn.destroy()

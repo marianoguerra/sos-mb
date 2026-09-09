@@ -20,11 +20,33 @@
 struct MapConn {
   rows : Map[String, @idbcore.Rec]
   mut clock : Int64
+  mut closed : Bool
 }
 
 ///|
 fn MapConn::new() -> MapConn {
-  { rows: Map([]), clock: 0L, }
+  { rows: Map([]), clock: 0L, closed: false, }
+}
+
+///|
+/// Refuse an operation on a connection that has been handed back.
+///
+/// A stub that kept answering after `close` would be the one place this
+/// contract is not enforced, and the only place it is cheap to test: on `js` a
+/// closed `IDBDatabase` throws `InvalidStateError` out of `transaction()`, and
+/// on `wasm-gc` `loader.mjs` rejects a closed row by hand. Both raise. So does
+/// this.
+fn MapConn::live(
+  self : MapConn,
+  operation~ : String,
+) -> Unit raise @sos.SosError {
+  guard !self.closed else {
+    raise @sos.SosError::new(
+      @sos.Unexpected,
+      operation~,
+      message="the connection is closed",
+    )
+  }
 }
 
 ///|
@@ -44,8 +66,15 @@ pub impl @idbcore.Conn for MapConn with fn name(_) {
 }
 
 ///|
+/// Nothing to hand back -- but recorded, so a test can see that closing the
+/// store reached the connection instead of stopping at `IdbStore`.
+pub impl @idbcore.Conn for MapConn with fn close(self) {
+  self.closed = true
+}
+
+///|
 pub impl @idbcore.Conn for MapConn with fn get(self, key, operation~) {
-  ignore(operation)
+  self.live(operation~)
   self.rows.get(key)
 }
 
@@ -58,14 +87,14 @@ pub impl @idbcore.Conn for MapConn with fn put(
   is_dir~,
   operation~,
 ) {
-  ignore(operation)
+  self.live(operation~)
   self.clock = self.clock + 1L
   self.rows[key] = { data, content_type, modified: self.clock, is_dir, }
 }
 
 ///|
 pub impl @idbcore.Conn for MapConn with fn delete_one(self, key, operation~) {
-  ignore(operation)
+  self.live(operation~)
   self.rows.remove(key)
 }
 
@@ -76,7 +105,7 @@ pub impl @idbcore.Conn for MapConn with fn delete_range(
   high,
   operation~,
 ) {
-  ignore(operation)
+  self.live(operation~)
   let doomed : Array[String] = []
   for key, _ in self.rows {
     if in_range(key, low, high) {
@@ -90,7 +119,7 @@ pub impl @idbcore.Conn for MapConn with fn delete_range(
 
 ///|
 pub impl @idbcore.Conn for MapConn with fn scan(self, low, high, operation~) {
-  ignore(operation)
+  self.live(operation~)
   let out : Array[Json] = []
   for key, rec in self.rows {
     if in_range(key, low, high) {
@@ -182,4 +211,62 @@ test "a scan that is not JSON names the operation the caller made" {
   } noraise {
     _ => fail("expected a scan that is not JSON to raise")
   }
+}
+
+///|
+/// Run an async body here, on this stack, and hand back whatever it raised.
+///
+/// `MapConn` never suspends, so no scheduler is needed -- the same reason the
+/// suite runs through `@testing.run_sync`. See `testing/drive.mbt`.
+fn drive(work : async () -> Unit noraise) -> Unit = "%async.run"
+
+///|
+fn attempt(work : async () -> Unit) -> Error? {
+  let caught : Ref[Error?] = { val: None, }
+  drive(async fn() noraise { work() catch { err => caught.val = Some(err) } })
+  caught.val
+}
+
+///|
+/// Closing the store must reach the connection.
+///
+/// The whole point of `IdbStore::close`: `@indexeddb.open` and `@idbwasm.open`
+/// both answer with a store and keep the `Conn` to themselves, so a caller who
+/// took the one-call opener has nothing else to close. A program that swaps one
+/// store for another at runtime drops a live database connection on every
+/// switch without it.
+test "closing the store closes the connection underneath" {
+  let conn = MapConn::new()
+  let store = @idbcore.IdbStore::over(conn)
+  assert_false(conn.closed)
+  assert_true(attempt(async fn() { store.close() }) is None)
+  assert_true(conn.closed)
+}
+
+///|
+test "close is idempotent" {
+  let conn = MapConn::new()
+  let store = @idbcore.IdbStore::over(conn)
+  assert_true(attempt(async fn() { store.close() }) is None)
+  assert_true(attempt(async fn() { store.close() }) is None)
+  assert_true(conn.closed)
+}
+
+///|
+/// After close, an operation must fail rather than quietly appear to work.
+///
+/// Both real boundaries do this -- a closed `IDBDatabase` throws
+/// `InvalidStateError` out of `transaction()` on `js`, and `loader.mjs` rejects
+/// a closed row by hand on `wasm-gc`. This is where it is cheap to assert.
+test "a store used after close fails" {
+  let conn = MapConn::new()
+  let store = @idbcore.IdbStore::over(conn)
+  let op = @sos.Operator::new(store)
+  assert_true(attempt(async fn() { store.close() }) is None)
+  let caught = attempt(async fn() { op.write("after.txt", b"x") })
+  let kind = match caught {
+    Some(@sos.SosError(kind~, ..)) => Some(kind)
+    _ => None
+  }
+  assert_eq(kind, Some(@sos.Unexpected))
 }

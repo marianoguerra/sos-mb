@@ -43,8 +43,18 @@ pub async fn open(
 /// database named for something that has been thrown away -- a session, a test
 /// run -- should go when it does, and `indexedDB.deleteDatabase` blocks while a
 /// connection is open, so the close and the delete belong in one call.
+///
+/// Closing first is allowed: the boundary keeps a closed handle's row precisely
+/// so this can still name the database. Use `close` when the data outlives the
+/// connection and this when it does not.
 pub async fn WasmConn::destroy(self : WasmConn) -> Unit raise @sos.SosError {
   ask(token => idb_destroy(self.handle, token), operation="destroy", path="")
+  |> ignore
+}
+
+///|
+pub impl @idbcore.Conn for WasmConn with fn close(self) {
+  ask(token => idb_close(self.handle, token), operation="close", path="")
   |> ignore
 }
 

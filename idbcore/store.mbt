@@ -27,6 +27,18 @@ pub fn IdbStore::database(self : IdbStore) -> String {
 }
 
 ///|
+/// Hand the connection underneath back. Idempotent.
+///
+/// Here, and not only on the concrete connection, because `@indexeddb.open` and
+/// `@idbwasm.open` both answer with an `IdbStore` and keep the `Conn` to
+/// themselves. Without this, a caller who took the one-call opener has nothing
+/// to close -- so a program that swaps one store for another at runtime drops a
+/// live database connection every time it switches.
+pub async fn IdbStore::close(self : IdbStore) -> Unit raise @sos.SosError {
+  self.conn.close()
+}
+
+///|
 /// The exclusive upper bound of the key range that holds everything under
 /// `prefix`.
 ///

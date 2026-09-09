@@ -42,6 +42,14 @@ extern "js" fn open_db(
   #|})
 
 ///|
+/// Hand the connection back.
+///
+/// Safe to call twice: `IDBDatabase.close()` on a connection that is already
+/// closing does nothing.
+extern "js" fn Database::close(self : Database) -> Unit =
+  #|(h) => { h.db.close(); }
+
+///|
 extern "js" fn Database::get(
   self : Database,
   key : String,

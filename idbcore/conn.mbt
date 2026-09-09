@@ -66,6 +66,17 @@ pub(open) trait Conn {
   /// Delete every key in `[low, high)`.
   async fn delete_range(Self, String, String, operation~ : String) -> Unit raise @sos.SosError
 
+  /// Hand the connection back. Idempotent.
+  ///
+  /// Required rather than defaulted, and required even though a `Conn` over a
+  /// `Map` has nothing to hand back: a boundary that holds an `IDBDatabase` and
+  /// never releases it keeps the database's version pinned, so a later
+  /// `deleteDatabase` -- or a page that reopens at a higher version -- blocks on
+  /// a connection nobody is using any more. A no-op default here would let the
+  /// next boundary make that mistake by saying nothing at all, which is the one
+  /// way this seam can be got wrong silently.
+  async fn close(Self) -> Unit raise @sos.SosError
+
   /// Every record in `[low, high)`, metadata only, as the JSON rows
   /// `decode_rows` reads.
   ///

@@ -63,5 +63,9 @@ extern "wasm" fn idb_scan(
 ) -> Unit = "sosidb" "scan"
 
 ///|
+/// Hand the connection back, leaving the database where it is.
+extern "wasm" fn idb_close(handle : Int, token : Int) -> Unit = "sosidb" "close"
+
+///|
 /// Close the handle and delete the whole database.
 extern "wasm" fn idb_destroy(handle : Int, token : Int) -> Unit = "sosidb" "destroy"

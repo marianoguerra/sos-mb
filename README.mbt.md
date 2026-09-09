@@ -30,10 +30,29 @@ on `js` an `IDBRequest` becomes a `Promise`; on `wasm-gc` a closure cannot cross
 into JavaScript at all, so a call hands JavaScript a token and JavaScript calls
 back into an export with it. What they have in common is everything else —
 implicit directories, the key bound, the range delete, the ancestor walk — so
-that lives once in `@sos/idbcore`, over a six-method `Conn` seam, for the reason
+that lives once in `@sos/idbcore`, over a seven-method `Conn` seam, for the reason
 `listing.mbt` gives about the listing. A `Conn` over a `Map` is then a store the
 suite can run under `moon test`, which is how semantics that used to be
 reachable only from a browser got unit tests.
+
+
+An IndexedDB store holds an open connection, so it has a lifetime the other
+backends do not:
+
+```
+let store = @indexeddb.open(database="notes")   // or @idbwasm.open(..)
+let op = @sos.Operator::new(store)
+...
+store.close()
+```
+
+`close` is on `IdbStore`, not only on the connection, because both `open`
+helpers keep the `Conn` to themselves — without it a caller who swaps one store
+for another at runtime drops a live connection on every switch, and a pinned
+connection is what makes a later `deleteDatabase` block. It is idempotent, and
+the store raises if used afterwards. `@idbwasm` also has `WasmConn::destroy`,
+which closes *and* deletes the database; closing first is fine, `destroy` can
+still name it.
 
 ## The shape of it
 

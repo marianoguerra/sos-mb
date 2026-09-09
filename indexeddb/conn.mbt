@@ -71,6 +71,11 @@ pub impl @idbcore.Conn for IdbConn with fn name(self) {
 }
 
 ///|
+pub impl @idbcore.Conn for IdbConn with fn close(self) {
+  self.db.close()
+}
+
+///|
 pub impl @idbcore.Conn for IdbConn with fn get(self, key, operation~) {
   let record = self.db.get(key).wait() catch {
       err => raise unexpected(err, operation~, path=key)
