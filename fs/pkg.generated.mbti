@@ -11,8 +11,17 @@ import {
 
 // Types and methods
 type FsStore
+pub async fn FsStore::copy(Self, String, String) -> Unit raise @sos.SosError
+pub async fn FsStore::create_dir(Self, String) -> Unit raise @sos.SosError
+pub async fn FsStore::delete(Self, String, @sos.DeleteOptions) -> Unit raise @sos.SosError
+pub fn FsStore::info(Self) -> @sos.StoreInfo
+pub async fn FsStore::list(Self, String, @sos.ListOptions) -> Array[@sos.Entry] raise @sos.SosError
 pub async fn FsStore::open(String) -> Self raise @sos.SosError
+pub async fn FsStore::read(Self, String, @sos.ReadOptions) -> Bytes raise @sos.SosError
+pub async fn FsStore::rename(Self, String, String) -> Unit raise @sos.SosError
 pub fn FsStore::root(Self) -> String
+pub async fn FsStore::stat(Self, String) -> @sos.Metadata raise @sos.SosError
+pub async fn FsStore::write(Self, String, Bytes, @sos.WriteOptions) -> Unit raise @sos.SosError
 pub impl @sos.Store for FsStore
 
 // Type aliases

@@ -11,8 +11,17 @@ import {
 
 // Types and methods
 type MemoryStore
+pub async fn MemoryStore::copy(Self, String, String) -> Unit raise @sos.SosError
+pub async fn MemoryStore::create_dir(Self, String) -> Unit raise @sos.SosError
+pub async fn MemoryStore::delete(Self, String, @sos.DeleteOptions) -> Unit raise @sos.SosError
+pub fn MemoryStore::info(Self) -> @sos.StoreInfo
+pub async fn MemoryStore::list(Self, String, @sos.ListOptions) -> Array[@sos.Entry] raise @sos.SosError
 pub fn MemoryStore::new(name? : String) -> Self
-pub fn MemoryStore::size(Self) -> Int
+pub async fn MemoryStore::read(Self, String, @sos.ReadOptions) -> Bytes raise @sos.SosError
+pub async fn MemoryStore::rename(Self, String, String) -> Unit raise @sos.SosError
+pub fn MemoryStore::size(Self) -> Int32
+pub async fn MemoryStore::stat(Self, String) -> @sos.Metadata raise @sos.SosError
+pub async fn MemoryStore::write(Self, String, Bytes, @sos.WriteOptions) -> Unit raise @sos.SosError
 pub impl @sos.Store for MemoryStore
 
 // Type aliases

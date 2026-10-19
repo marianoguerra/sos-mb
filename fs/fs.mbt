@@ -363,3 +363,16 @@ async fn FsStore::collect(
     }
   }
 }
+
+///|
+pub extend FsStore with @sos.Store::{
+  stat,
+  read,
+  info,
+  list,
+  create_dir,
+  copy,
+  rename,
+  delete,
+  write,
+}

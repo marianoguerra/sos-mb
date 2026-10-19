@@ -32,13 +32,13 @@ struct MemoryStore {
 }
 
 ///|
-pub fn MemoryStore::new(name? : String = "") -> MemoryStore {
+pub fn MemoryStore::new(name~ : String = "") -> MemoryStore {
   { entries: Map([]), clock: 0L, name, }
 }
 
 ///|
 /// How many records are held, directory markers included.
-pub fn MemoryStore::size(self : MemoryStore) -> Int {
+pub fn MemoryStore::size(self : MemoryStore) -> Int32 {
   self.entries.length()
 }
 
@@ -264,4 +264,17 @@ pub impl @sos.Store for MemoryStore with fn rename(self, from, to) {
   }
   self.entries[to] = { ..record, last_modified: self.tick(), }
   self.entries.remove(from)
+}
+
+///|
+pub extend MemoryStore with @sos.Store::{
+  stat,
+  read,
+  info,
+  list,
+  create_dir,
+  copy,
+  rename,
+  delete,
+  write,
 }

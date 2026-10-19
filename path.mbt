@@ -124,7 +124,7 @@ pub fn join(base : String, child : String) -> String {
 
 ///|
 /// Number of `/`-separated segments. `depth("") == 0`, `depth("a/b/") == 2`.
-pub fn depth(path : String) -> Int {
+pub fn depth(path : String) -> Int32 {
   let mut n = 0
   for seg in path.split("/") {
     if seg != "" {
@@ -242,7 +242,7 @@ pub fn validate_dir(
 /// with a surrogate below `0xFFFF` and so stays inside the bound. In code-point
 /// order it would not, and a key with an emoji in it would silently vanish from
 /// a listing.
-pub fn path_compare(a : String, b : String) -> Int {
+pub fn path_compare(a : String, b : String) -> Int32 {
   let shared = @cmp.minimum(a.length(), b.length())
   for i in 0..<shared {
     let order = a.at(i).compare(b.at(i))

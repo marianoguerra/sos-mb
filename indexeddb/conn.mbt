@@ -16,8 +16,8 @@ struct IdbConn {
 ///|
 /// Open, or create, `database` and use the object store `store` inside it.
 pub async fn IdbConn::open(
-  database? : String = "sos",
-  store? : String = "objects",
+  database~ : String = "sos",
+  store~ : String = "objects",
 ) -> IdbConn raise @sos.SosError {
   guard has_indexeddb() else {
     raise @sos.SosError::new(
@@ -40,8 +40,8 @@ pub async fn IdbConn::open(
 ///|
 /// A store over a freshly opened connection: the one call most callers want.
 pub async fn open(
-  database? : String = "sos",
-  store? : String = "objects",
+  database~ : String = "sos",
+  store~ : String = "objects",
 ) -> @idbcore.IdbStore raise @sos.SosError {
   @idbcore.IdbStore::over(IdbConn::open(database~, store~))
 }
@@ -130,4 +130,15 @@ pub impl @idbcore.Conn for IdbConn with fn scan(self, low, high, operation~) {
   self.db.scan(low, high).wait() catch {
     err => raise unexpected(err, operation~, path=low)
   }
+}
+
+///|
+pub extend IdbConn with @idbcore.Conn::{
+  name,
+  scan,
+  close,
+  put,
+  delete_one,
+  get,
+  delete_range,
 }

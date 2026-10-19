@@ -72,7 +72,7 @@ pub(all) struct ListOptions {
   /// Every descendant, rather than the immediate children.
   recursive : Bool
   /// At most this many entries.
-  limit : Int?
+  limit : Int32?
   /// Resume: only entries strictly after this path, in the ascending order
   /// `list` always answers in.
   start_after : String?
@@ -93,3 +93,53 @@ pub(all) struct DeleteOptions {
 pub fn DeleteOptions::default() -> DeleteOptions {
   { recursive: false, }
 }
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend Range with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend Range with Debug::{to_repr}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ReadOptions with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ReadOptions with Debug::{to_repr}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend WriteOptions with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend WriteOptions with Debug::{to_repr}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ListOptions with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ListOptions with Debug::{to_repr}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend DeleteOptions with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend DeleteOptions with Debug::{to_repr}

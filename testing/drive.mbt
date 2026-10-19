@@ -23,7 +23,7 @@ fn run_to_completion(work : async () -> Unit noraise) -> Unit = "%async.run"
 /// is a half-finished run reported as a pass.
 pub fn run_sync(
   store : &@sos.Store,
-  prefix? : String = "sos-conformance/",
+  prefix~ : String = "sos-conformance/",
 ) -> Unit raise {
   let caught : Ref[Error?] = { val: None, }
   let finished : Ref[Bool] = { val: false, }
@@ -48,7 +48,7 @@ pub fn run_sync(
 /// `check`, driven the same way.
 pub fn check_sync(
   store : &@sos.Store,
-  prefix? : String = "sos-conformance/",
+  prefix~ : String = "sos-conformance/",
 ) -> Report raise {
   let report : Ref[Report?] = { val: None, }
   run_to_completion(async fn() noraise {

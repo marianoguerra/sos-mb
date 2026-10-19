@@ -21,13 +21,13 @@ extern "wasm" fn now_ms() -> Double = "harness" "now"
 
 ///|
 /// A call this page started has succeeded.
-pub fn on_sos_reply(token : Int, body : String) -> Unit {
+pub fn on_sos_reply(token : Int32, body : String) -> Unit {
   @idbwasm.reply(token, body)
 }
 
 ///|
 /// A call this page started has failed.
-pub fn on_sos_error(token : Int, why : String) -> Unit {
+pub fn on_sos_error(token : Int32, why : String) -> Unit {
   @idbwasm.fail(token, why)
 }
 

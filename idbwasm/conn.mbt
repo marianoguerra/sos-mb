@@ -1,15 +1,15 @@
 ///|
 /// An open connection, as a row number in JavaScript's handle table.
 struct WasmConn {
-  handle : Int
+  handle : Int32
   name : String
 }
 
 ///|
 /// Open, or create, `database` and use the object store `store` inside it.
 pub async fn WasmConn::open(
-  database? : String = "sos",
-  store? : String = "objects",
+  database~ : String = "sos",
+  store~ : String = "objects",
 ) -> WasmConn raise @sos.SosError {
   let answer = ask(
     token => idb_open(database, store, token),
@@ -30,8 +30,8 @@ pub async fn WasmConn::open(
 ///|
 /// A store over a freshly opened connection: the one call most callers want.
 pub async fn open(
-  database? : String = "sos",
-  store? : String = "objects",
+  database~ : String = "sos",
+  store~ : String = "objects",
 ) -> @idbcore.IdbStore raise @sos.SosError {
   @idbcore.IdbStore::over(WasmConn::open(database~, store~))
 }
@@ -164,4 +164,15 @@ pub impl @idbcore.Conn for WasmConn with fn delete_range(
 ///|
 pub impl @idbcore.Conn for WasmConn with fn scan(self, low, high, operation~) {
   ask(token => idb_scan(self.handle, low, high, token), operation~, path=low)
+}
+
+///|
+pub extend WasmConn with @idbcore.Conn::{
+  name,
+  scan,
+  close,
+  put,
+  delete_one,
+  get,
+  delete_range,
 }

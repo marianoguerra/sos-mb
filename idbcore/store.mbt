@@ -288,3 +288,16 @@ pub impl @sos.Store for IdbStore with fn rename(self, from, to) {
   @sos.Store::copy(self, from, to)
   self.conn.delete_one(from, operation="rename")
 }
+
+///|
+pub extend IdbStore with @sos.Store::{
+  stat,
+  read,
+  info,
+  list,
+  create_dir,
+  copy,
+  rename,
+  delete,
+  write,
+}

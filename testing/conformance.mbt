@@ -29,7 +29,7 @@ priv struct Suite {
 /// different prefixes.
 pub async fn run(
   store : &@sos.Store,
-  prefix? : String = "sos-conformance/",
+  prefix~ : String = "sos-conformance/",
 ) -> Unit {
   let report = execute(store, prefix, stop_on_failure=true)
   guard report.is_ok() else { raise Failed(report.to_string()) }
@@ -42,7 +42,7 @@ pub async fn run(
 /// interesting one.
 pub async fn check(
   store : &@sos.Store,
-  prefix? : String = "sos-conformance/",
+  prefix~ : String = "sos-conformance/",
 ) -> Report noraise {
   execute(store, prefix, stop_on_failure=false)
 }

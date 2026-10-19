@@ -29,8 +29,9 @@ type Report
 pub fn Report::checks(Self) -> Array[Check]
 pub fn Report::failures(Self) -> Array[Check]
 pub fn Report::is_ok(Self) -> Bool
-pub fn Report::passed(Self) -> Int
-pub fn Report::skipped(Self) -> Int
+pub fn Report::passed(Self) -> Int32
+pub fn Report::skipped(Self) -> Int32
+pub fn Report::to_string(Self) -> String
 pub impl Show for Report
 
 // Type aliases

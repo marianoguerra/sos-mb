@@ -9,14 +9,14 @@ priv enum Answer {
 
 ///|
 /// Calls in flight, by token.
-let inflight : Map[Int, (Answer) -> Unit] = Map([])
+let inflight : Map[Int32, (Answer) -> Unit] = Map([])
 
 ///|
-let next_token : Ref[Int] = { val: 0, }
+let next_token : Ref[Int32] = { val: 0, }
 
 ///|
 /// Register a continuation and answer with the token to hand JavaScript.
-fn claim(k : (Answer) -> Unit) -> Int {
+fn claim(k : (Answer) -> Unit) -> Int32 {
   next_token.val = next_token.val + 1
   let token = next_token.val
   inflight[token] = k
@@ -30,7 +30,7 @@ fn claim(k : (Answer) -> Unit) -> Int {
 /// in flight is ignored rather than fatal: a boundary that answered twice
 /// should not take the tab down, and `park` below already guarantees only the
 /// first answer is delivered.
-pub fn reply(token : Int, body : String) -> Unit {
+pub fn reply(token : Int32, body : String) -> Unit {
   match inflight.get(token) {
     Some(k) => {
       inflight.remove(token)
@@ -42,7 +42,7 @@ pub fn reply(token : Int, body : String) -> Unit {
 
 ///|
 /// The call this token stands for failed, for the reason `why` gives.
-pub fn fail(token : Int, why : String) -> Unit {
+pub fn fail(token : Int32, why : String) -> Unit {
   match inflight.get(token) {
     Some(k) => {
       inflight.remove(token)
@@ -54,7 +54,7 @@ pub fn fail(token : Int, why : String) -> Unit {
 
 ///|
 /// How many calls are waiting. For a harness, and for a leak to be visible.
-pub fn pending() -> Int {
+pub fn pending() -> Int32 {
   inflight.length()
 }
 
@@ -120,7 +120,7 @@ async fn park(go : ((Answer) -> Unit) -> Unit) -> Answer noraise {
 /// `go` receives the token to pass across; whatever it starts must eventually
 /// reach `reply` or `fail` with that token, or the call never returns.
 async fn ask(
-  go : (Int) -> Unit,
+  go : (Int32) -> Unit,
   operation~ : String,
   path~ : String,
 ) -> String raise @sos.SosError {

@@ -100,8 +100,8 @@ pub async fn Operator::write(
   path : String,
   content : Bytes,
   content_type? : String,
-  append? : Bool = false,
-  if_not_exists? : Bool = false,
+  append~ : Bool = false,
+  if_not_exists~ : Bool = false,
 ) -> Unit raise SosError {
   let path = validate_file(path, operation="write")
   let cap = self.info.capability
@@ -135,8 +135,8 @@ pub async fn Operator::write_text(
   path : String,
   content : String,
   content_type? : String,
-  append? : Bool = false,
-  if_not_exists? : Bool = false,
+  append~ : Bool = false,
+  if_not_exists~ : Bool = false,
 ) -> Unit raise SosError {
   self.write(
     path,
@@ -175,8 +175,8 @@ pub async fn Operator::exists(
 pub async fn Operator::list(
   self : Operator,
   path : String,
-  recursive? : Bool = false,
-  limit? : Int,
+  recursive~ : Bool = false,
+  limit? : Int32,
   start_after? : String,
 ) -> Array[Entry] raise SosError {
   let path = validate_dir(path, operation="list")
@@ -208,7 +208,7 @@ pub async fn Operator::list(
 pub async fn Operator::delete(
   self : Operator,
   path : String,
-  recursive? : Bool = false,
+  recursive~ : Bool = false,
 ) -> Unit raise SosError {
   let path = validate(path, operation="delete")
   let cap = self.info.capability

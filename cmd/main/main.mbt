@@ -43,7 +43,7 @@ async fn main {
     op.write("notes/../../escape.txt", b"nope")
     "no error"
   } catch {
-    err => err.to_string()
+    err => "\{err}"
   }
   println("escaping path: \{refused}")
   op.delete("", recursive=true)

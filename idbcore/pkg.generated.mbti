@@ -17,8 +17,17 @@ pub struct IdbStore {
   conn : &Conn
 }
 pub async fn IdbStore::close(Self) -> Unit raise @sos.SosError
+pub async fn IdbStore::copy(Self, String, String) -> Unit raise @sos.SosError
+pub async fn IdbStore::create_dir(Self, String) -> Unit raise @sos.SosError
 pub fn IdbStore::database(Self) -> String
+pub async fn IdbStore::delete(Self, String, @sos.DeleteOptions) -> Unit raise @sos.SosError
+pub fn IdbStore::info(Self) -> @sos.StoreInfo
+pub async fn IdbStore::list(Self, String, @sos.ListOptions) -> Array[@sos.Entry] raise @sos.SosError
 pub fn IdbStore::over(&Conn) -> Self
+pub async fn IdbStore::read(Self, String, @sos.ReadOptions) -> Bytes raise @sos.SosError
+pub async fn IdbStore::rename(Self, String, String) -> Unit raise @sos.SosError
+pub async fn IdbStore::stat(Self, String) -> @sos.Metadata raise @sos.SosError
+pub async fn IdbStore::write(Self, String, Bytes, @sos.WriteOptions) -> Unit raise @sos.SosError
 pub impl @sos.Store for IdbStore
 
 pub(all) struct Rec {

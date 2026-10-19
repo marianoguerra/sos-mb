@@ -112,7 +112,7 @@ fn join_paths(paths : Array[String]) -> String {
 fn describe(err : Error) -> String {
   match err {
     Failed(message) => message
-    @sos.SosError(_) as sos => sos.to_string()
+    @sos.SosError(_) as sos => "\{sos}"
     _ => "an error from outside sos"
   }
 }

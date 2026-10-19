@@ -10,7 +10,7 @@
 // a skipped test could not have incremented.
 
 ///|
-let ran : Ref[Int] = { val: 0, }
+let ran : Ref[Int32] = { val: 0, }
 
 ///|
 /// A fresh, empty directory nobody else is using.

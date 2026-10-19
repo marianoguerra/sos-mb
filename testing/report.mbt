@@ -36,12 +36,12 @@ pub fn Report::is_ok(self : Report) -> Bool {
 }
 
 ///|
-pub fn Report::passed(self : Report) -> Int {
+pub fn Report::passed(self : Report) -> Int32 {
   self.checks.filter(c => c.failure is None && c.skipped is None).length()
 }
 
 ///|
-pub fn Report::skipped(self : Report) -> Int {
+pub fn Report::skipped(self : Report) -> Int32 {
   self.checks.filter(c => c.skipped is Some(_)).length()
 }
 
@@ -68,3 +68,21 @@ pub impl Show for Report with fn output(self, logger) {
     }
   }
 }
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend Check with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend Check with Debug::{to_repr}
+
+///|
+pub extend Report with Show::{to_string}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend Report with Show::{output}

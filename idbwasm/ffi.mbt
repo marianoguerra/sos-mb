@@ -16,56 +16,56 @@
 extern "wasm" fn idb_open(
   database : String,
   store : String,
-  token : Int,
+  token : Int32,
 ) -> Unit = "sosidb" "open"
 
 ///|
 /// One record as a JSON document, or `{"found":false}`.
-extern "wasm" fn idb_get(handle : Int, key : String, token : Int) -> Unit = "sosidb" "get"
+extern "wasm" fn idb_get(handle : Int32, key : String, token : Int32) -> Unit = "sosidb" "get"
 
 ///|
 /// Insert or replace one record, stamped with the boundary's own clock.
 extern "wasm" fn idb_put(
-  handle : Int,
+  handle : Int32,
   key : String,
   data : String,
   ctype : String,
   is_dir : Bool,
-  token : Int,
+  token : Int32,
 ) -> Unit = "sosidb" "put"
 
 ///|
 /// Delete one key. A key that is not there is not an error, here or in
 /// IndexedDB.
 extern "wasm" fn idb_delete_one(
-  handle : Int,
+  handle : Int32,
   key : String,
-  token : Int,
+  token : Int32,
 ) -> Unit = "sosidb" "deleteOne"
 
 ///|
 /// Delete every key in `[low, high)`.
 extern "wasm" fn idb_delete_range(
-  handle : Int,
+  handle : Int32,
   low : String,
   high : String,
-  token : Int,
+  token : Int32,
 ) -> Unit = "sosidb" "deleteRange"
 
 ///|
 /// Every record in `[low, high)`, metadata only, as the JSON rows
 /// `@idbcore.decode_rows` reads. The object content never crosses this call.
 extern "wasm" fn idb_scan(
-  handle : Int,
+  handle : Int32,
   low : String,
   high : String,
-  token : Int,
+  token : Int32,
 ) -> Unit = "sosidb" "scan"
 
 ///|
 /// Hand the connection back, leaving the database where it is.
-extern "wasm" fn idb_close(handle : Int, token : Int) -> Unit = "sosidb" "close"
+extern "wasm" fn idb_close(handle : Int32, token : Int32) -> Unit = "sosidb" "close"
 
 ///|
 /// Close the handle and delete the whole database.
-extern "wasm" fn idb_destroy(handle : Int, token : Int) -> Unit = "sosidb" "destroy"
+extern "wasm" fn idb_destroy(handle : Int32, token : Int32) -> Unit = "sosidb" "destroy"

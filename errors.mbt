@@ -76,8 +76,8 @@ pub(all) suberror SosError {
 pub fn SosError::new(
   kind : ErrorKind,
   operation~ : String,
-  path? : String = "",
-  message? : String = "",
+  path~ : String = "",
+  message~ : String = "",
 ) -> SosError {
   SosError(kind~, operation~, path~, message~)
 }
@@ -126,3 +126,29 @@ pub impl Show for SosError with fn output(self, logger) {
     logger.write_string(": \{message}")
   }
 }
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ErrorKind with Eq::{not_equal, equal}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ErrorKind with Debug::{to_repr}
+
+///|
+pub extend ErrorKind with Show::{to_string}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend ErrorKind with Show::{output}
+
+///|
+pub extend SosError with Show::{to_string}
+
+///|
+#deprecated(skip_current_package=true)
+#doc(hidden)
+pub extend SosError with Show::{output}

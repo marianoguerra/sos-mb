@@ -15,5 +15,5 @@ preferred_target = "native"
 description = "Simple Object Storage"
 
 import {
-  "moonbitlang/async@0.21.0",
+  "moonbitlang/async@0.22.5",
 }

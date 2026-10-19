@@ -12,7 +12,7 @@ pub fn apply_list_options(Array[Entry], ListOptions) -> Array[Entry]
 
 pub fn basename(String) -> String
 
-pub fn depth(String) -> Int
+pub fn depth(String) -> Int32
 
 pub fn ensure_dir_path(String) -> String
 
@@ -26,7 +26,7 @@ pub fn normalize(String) -> String
 
 pub fn parent(String) -> String
 
-pub fn path_compare(String, String) -> Int
+pub fn path_compare(String, String) -> Int32
 
 pub fn path_lt(String, String) -> Bool
 
@@ -48,6 +48,7 @@ pub fn SosError::message(Self) -> String
 pub fn SosError::new(ErrorKind, operation~ : String, path? : String, message? : String) -> Self
 pub fn SosError::operation(Self) -> String
 pub fn SosError::path(Self) -> String
+pub fn SosError::to_string(Self) -> String
 pub impl Show for SosError
 
 // Types and methods
@@ -103,11 +104,12 @@ pub(all) enum ErrorKind {
   RangeNotSatisfied
   Unexpected
 } derive(Eq, @debug.Debug)
+pub fn ErrorKind::to_string(Self) -> String
 pub impl Show for ErrorKind
 
 pub(all) struct ListOptions {
   recursive : Bool
-  limit : Int?
+  limit : Int32?
   start_after : String?
 } derive(Eq, @debug.Debug)
 pub fn ListOptions::default() -> Self
@@ -131,7 +133,7 @@ pub async fn Operator::create_dir(Self, String) -> Unit raise SosError
 pub async fn Operator::delete(Self, String, recursive? : Bool) -> Unit raise SosError
 pub async fn Operator::exists(Self, String) -> Bool raise SosError
 pub fn Operator::info(Self) -> StoreInfo
-pub async fn Operator::list(Self, String, recursive? : Bool, limit? : Int, start_after? : String) -> Array[Entry] raise SosError
+pub async fn Operator::list(Self, String, recursive? : Bool, limit? : Int32, start_after? : String) -> Array[Entry] raise SosError
 pub fn Operator::new(&Store) -> Self
 pub async fn Operator::read(Self, String, range? : Range) -> Bytes raise SosError
 pub async fn Operator::read_text(Self, String, range? : Range) -> String raise SosError
